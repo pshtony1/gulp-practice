@@ -8,6 +8,7 @@ import prefixer from "gulp-autoprefixer";
 import miniCSS from "gulp-csso";
 import bro from "gulp-bro";
 import babelify from "babelify";
+import ghPages from "gulp-gh-pages";
 
 sass.compiler = require("node-sass");
 
@@ -43,13 +44,13 @@ const pug = () => {
     .pipe(connect.reload());
 };
 
-const cleanBuild = () => del(["build"]);
+const clean = () => del(["build", ".publish"]);
 
 const webserver = () => {
   connect.server({
     root: "build",
     livereload: true,
-    port: 8002,
+    port: 8000,
   });
 
   return new Promise(function (resolve, reject) {
@@ -89,9 +90,13 @@ const js = () =>
     .pipe(gulp.dest(routes.js.dest))
     .pipe(connect.reload());
 
+const ghDeploy = () => gulp.src("build/**/*").pipe(ghPages());
+
 // Series
-const prepare = gulp.series([cleanBuild, img]);
+const prepare = gulp.series([clean, img]);
 const assets = gulp.series([pug, styles, js]);
 const onserver = gulp.parallel([webserver, watch]);
 
-export const dev = gulp.series([prepare, assets, onserver]);
+export const build = gulp.series([prepare, assets]);
+export const dev = gulp.series([build, onserver]);
+export const deploy = gulp.series([build, ghDeploy, clean]);
